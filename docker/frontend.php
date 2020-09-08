@@ -9,29 +9,19 @@
 function I(i){return document.getElementById(i);}
 
 //LIST OF TEST SERVERS. See documentation for details if needed
-var SPEEDTEST_SERVERS=[
-	{	//this is my demo server, remove it
-		name:"Speedtest Demo Server (Helsinki)", //user friendly name for the server
-		server:"//fi.openspeed.org/", //URL to the server. // at the beginning will be replaced with http:// or https:// automatically
-		dlURL:"garbage.php",  //path to download test on this server (garbage.php or replacement)
-		ulURL:"empty.php",  //path to upload test on this server (empty.php or replacement)
-		pingURL:"empty.php",  //path to ping/jitter test on this server (empty.php or replacement)
-		getIpURL:"getIP.php"  //path to getIP on this server (getIP.php or replacement)
-	},
-	{	//this is my demo server, remove it
-		name:"Old Speedtest Demo Server",
-		server:"//mpotdemo.fdossena.com/",
-		dlURL:"garbage.php",
-		ulURL:"empty.php",
-		pingURL:"empty.php",
-		getIpURL:"getIP.php"
-	}
-	//add other servers here, comma separated
-];
+var SPEEDTEST_SERVERS= <?= file_get_contents('/servers.json') ?: '[]' ?>;
 
 //INITIALIZE SPEEDTEST
 var s=new Speedtest(); //create speedtest object
-s.setParameter("telemetry_level","basic"); //enable telemetry
+<?php if(getenv("TELEMETRY")=="true"){ ?>
+s.setParameter("telemetry_level","basic");
+<?php } ?>
+<?php if(getenv("DISABLE_IPINFO")=="true"){ ?>
+s.setParameter("getIp_ispInfo","false");
+<?php } ?>
+<?php if(getenv("DISTANCE")){ ?>
+s.setParameter("getIp_ispInfo_distance","<?=getenv("DISTANCE") ?>");
+<?php } ?>
 
 //SERVER AUTO SELECTION
 function initServers(){
@@ -386,16 +376,18 @@ function initUI(){
 		}
 	}
 </style>
-<title>LibreSpeed Example</title>
+<title><?= getenv('TITLE') ?: 'LibreSpeed Example' ?></title>
 </head>
 <body onload="initServers()">
-<h1>LibreSpeed Example</h1>
+<h1><?= getenv('TITLE') ?: 'LibreSpeed Example' ?></h1>
 <div id="loading" class="visible">
 	<p id="message"><span class="loadCircle"></span>Selecting a server...</p>
 </div>
 <div id="testWrapper" class="hidden">
 	<div id="startStopBtn" onclick="startStop()"></div>
-	<a class="privacy" href="#" onclick="I('privacyPolicy').style.display=''">Privacy</a>
+	<?php if(getenv("TELEMETRY")=="true"){ ?>
+        <a class="privacy" href="#" onclick="I('privacyPolicy').style.display=''">Privacy</a>
+	<?php } ?>
 	<div id="serverArea">
 		Server: <select id="server" onchange="s.setSelectedServer(SPEEDTEST_SERVERS[this.value])"></select>
 	</div>
@@ -471,7 +463,7 @@ function initUI(){
     <h4>Data removal</h4>
     <p>
         If you want to have your information deleted, you need to provide either the ID of the test or your IP address. This is the only way to identify your data, without this information we won't be able to comply with your request.<br/><br/>
-        Contact this email address for all deletion requests: <a href="mailto:PUT@YOUR_EMAIL.HERE">TO BE FILLED BY DEVELOPER</a>.
+        Contact this email address for all deletion requests: <a href="mailto:<?=getenv("EMAIL") ?>"><?=getenv("EMAIL") ?></a>.
     </p>
     <br/><br/>
     <a class="privacy" href="#" onclick="I('privacyPolicy').style.display='none'">Close</a><br/>
